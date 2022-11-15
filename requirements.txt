@@ -1,5 +1,6 @@
 pycollada>=0.7.2
 plotly>=5.11.0
 plotly_express
-igl
+cmake >= 3.17.0
 nbformat>=4.2.0
+tqdm

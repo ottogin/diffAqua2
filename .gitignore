@@ -1,2 +1,4 @@
 .ipynb_checkpoints/
 data/
+external/libigl-python-bindings/build
+__pycache__
