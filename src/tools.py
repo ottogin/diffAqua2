@@ -19,7 +19,7 @@ def show(traces):
         fig.add_trace(tr)
     fig.show()
 
-def show_grid(*plots, shape=None):
+def show_grid(*plots, shape=None, title=""):
     if shape is None:
         shape = (len(plots), 1)
 
