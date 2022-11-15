@@ -2,3 +2,8 @@
 data/
 external/libigl-python-bindings/build
 __pycache__
+
+runs/**/LatentCodes
+runs/**/Logs.pth
+runs/**/ModelParameters
+runs/**/OptimizerParameters

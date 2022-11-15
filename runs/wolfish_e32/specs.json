@@ -1,0 +1,43 @@
+{
+  "Description" : "Base version of DeepSDF, WeFish Dataset, 32 embedding length",
+  "DataSource" : "data/sdf",
+  "TrainSplit" : "data/sdf/wefish_1/train_split.json",
+  "NetworkSpecs" : {
+    "dims" : [ 512, 512, 512, 512, 512, 512, 512, 512 ],
+    "dropout" : [0, 1, 2, 3, 4, 5, 6, 7],
+    "dropout_prob" : 0.2,
+    "norm_layers" : [0, 1, 2, 3, 4, 5, 6, 7],
+    "latent_in" : [],
+    "xyz_in_all" : false,
+    "use_tanh" : false,
+    "latent_dropout" : false,
+    "weight_norm" : true,
+    "positional_encoding" : true,
+    "fourier_degree" : 5
+    },
+  "CodeLength" : 32,
+  "NumEpochs" : 4000,
+  "SnapshotFrequency" : 1000,
+  "AdditionalSnapshots" : [ 100, 500 ],
+  "LearningRateSchedule" : [
+    {
+      "Type" : "Step",
+      "Initial" : 0.0005,
+      "Interval" : 500,
+      "Factor" : 0.5
+    },
+    {
+      "Type" : "Step",
+      "Initial" : 0.001,
+      "Interval" : 500,
+      "Factor" : 0.5
+    }],
+  "SamplesPerScene" : 16384,
+  "ScenesPerBatch" : 30,
+  "DataLoaderThreads" : 16,
+  "ClampingDistance" : 0.1,
+  "CodeRegularization" : true,
+  "CodeRegularizationLambda" : 1e-4,
+  "LabelsLossLambda" : 0.05,
+  "CodeBound" : 1.0
+}
