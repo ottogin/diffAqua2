@@ -4,3 +4,4 @@ plotly_express
 cmake >= 3.17.0
 nbformat>=4.2.0
 tqdm
+conda
