@@ -122,4 +122,4 @@ def reconstruct_voxels(decoder, latent_vec, N=[64, 32, 32], max_batch=32 ** 3,
         sdf_values =\
             predict_sdf_grid(decoder, latent_vec, voxel_size, N, max_batch, offset, scale, voxel_origin)
 
-        return torch.tensor(sdf_values < 0., dtype=torch.float32)
+        return (sdf_values < 0.).type(torch.FloatTensor)
