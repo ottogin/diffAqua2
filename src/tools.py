@@ -17,6 +17,8 @@ def show(traces):
     fig = go.Figure(layout=layout)
     for tr in traces:
         fig.add_trace(tr)
+
+    fig.update_layout(template="plotly_dark")
     fig.show()
 
 def show_grid(*plots, shape=None, title=""):
@@ -31,6 +33,7 @@ def show_grid(*plots, shape=None, title=""):
             fig.add_trace(tr, col=idx % shape[0] + 1, row=idx // shape[0] + 1)
     
     fig.update_scenes(aspectmode='data')
+    fig.update_layout(template="plotly_dark")
     fig.show()
 
 def plot_3d_mesh(verts, faces):
