@@ -27,7 +27,7 @@ from diffpd import transforms
 from diffpd.mesh import MeshHex
 
 seed = 42
-pv.start_xvfb()
+# pv.start_xvfb()
 
 # Mesh parameters.
 length = 20
@@ -120,9 +120,21 @@ def simulate(voxels, num_frames=20):
     a = None
     q, v = q0, v0
 
+    target_dir = torch.Tensor([-1.0, 0.0, 0.0]).to(torch.float64)
+    forward_loss = 0.0
+    
     qs, vs = [], []
     for a in controller():
         q, v = sim(q, v, a, shape=voxel_mesh)
+
+        v_zero = torch.zeros_like(v).view(-1, 3)
+        v_zero[:, :-1] = v.view(-1, 3)[:, :-1]
+        v_zero = v_zero.view(-1)
+
+        v_center = v_zero.view(-1, 3).mean(dim=0)
+
+        dot = torch.dot(v_center, target_dir)
+        forward_loss += -dot
 
         qs.append(q)
         vs.append(v)
@@ -132,7 +144,7 @@ def simulate(voxels, num_frames=20):
     #           torch.mean(vs[idx].reshape(-1, 3)[:, 1]).item(),
     #           torch.mean(vs[idx].reshape(-1, 3)[:, 2]).item()
     #         )
-    speed = torch.mean((qs[-1] - q0).reshape(-1, 3)[:, 0])#torch.mean(torch.concatenate(vs).reshape(-1, 3))
+    # speed = torch.mean((qs[-1] - q0).reshape(-1, 3)[:, 0])#torch.mean(torch.concatenate(vs).reshape(-1, 3))
     
-    return speed, voxel_mesh
+    return forward_loss, voxel_mesh
         
