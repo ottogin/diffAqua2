@@ -15,6 +15,7 @@ from lib.models.decoder import DeepSDF
 DEVICE = "cuda:2"
 
 def run_optimisation(save_path, start_latent_num=14, lr=1e-4, num_iters=100, dx=1./20, dx_sdf=1./32):
+    print(f"Start optimisation {save_path} from shape #{start_latent_num} with lr={lr} and {num_iters} iterations")
     
     summary = {
         "params": {
@@ -51,7 +52,7 @@ def run_optimisation(save_path, start_latent_num=14, lr=1e-4, num_iters=100, dx=
     latent_codes = []
     metric  = []
     latent = torch.clone(orig_latents[start_latent_num]).requires_grad_(True)
-    optimizer = torch.optim.Adam([latent]) #3e-4
+    optimizer = torch.optim.Adam([latent], lr=lr)
 
     latent_codes.append(latent.clone())
 
@@ -124,5 +125,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    print(f"Start optimisation {args.name} from shape #{args.startshape} with lr={args.lr} and {args.nits} iterations")
     run_optimisation(os.path.join(base_dir, args.name + ".json"), start_latent_num=args.startshape, lr=args.lr, num_iters=args.nits)
