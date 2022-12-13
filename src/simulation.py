@@ -142,6 +142,8 @@ def simulate(voxels, num_frames=20, make_video=False):
 
     for a in controller():
         q, v = sim(q, v, a, shape=voxel_mesh)
+        
+        # print("Location : ", q.view(-1, 3).mean(dim=0), " : ", q.size())
 
         v_zero = torch.zeros_like(v).view(-1, 3)
         v_zero[:, :-1] = v.view(-1, 3)[:, :-1]
