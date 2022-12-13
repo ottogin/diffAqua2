@@ -148,11 +148,11 @@ def simulate(voxels, num_frames=20, make_video=False):
             plotter.add_mesh(pv_boundary, color='w', show_edges=True, name='fish')
             # plotter.add_arrows(arrow_cent, arrow_dir, mag=1.0, clim=[0, 1])
             # plotter.add_arrows(q_head_np, arrow_dir.sum(0), mag=0.1, clim=[0, 1])
-            plotter.camera_position = [
-                (-0.5, -3.0, 1.2),
-                (-0.5, 0.0, 0.0),
-                (0.0, 0.0, 1.0)]
-            _, img = plotter.show(screenshot=True, return_img=True, auto_close=False, jupyter_backend='none', return_viewer=False)
+            # plotter.camera_position = [
+            #     (-0.5, -3.0, 1.2),
+            #     (-0.5, 0.0, 0.0),
+            #     (0.0, 0.0, 1.0)]
+            _, img = plotter.show(return_cpos=True, screenshot=True, return_img=True, auto_close=False, jupyter_backend='none', return_viewer=False)
             plotter.clear()
             writer.append_data(img)
 
