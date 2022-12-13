@@ -7,5 +7,6 @@ runs/**/LatentCodes
 runs/**/Logs.pth
 runs/**/ModelParameters
 runs/**/OptimizerParameters
+optimisation_runs
 
 *.zip

@@ -140,4 +140,4 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    run_optimisation(os.path.join(base_dir, args.name + ".json"), start_latent_num=args.startshape, lr=args.lr, num_iters=args.nits)
+    run_optimisation(os.path.join(base_dir, args.name), start_latent_num=args.startshape, lr=args.lr, num_iters=args.nits)
