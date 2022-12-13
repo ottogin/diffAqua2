@@ -116,7 +116,7 @@ def run_optimisation(save_path, start_latent_num=14, lr=1e-4, num_iters=100, dx=
         optimizer.zero_grad()
 
         # Drop points inside the mesh - gradients there are not reliable
-        filt = (pred_sdf[:, 0] <= dx_sdf / 0.00000001) & (pred_sdf[:, 0] >= -dx_sdf / 0.000000001)
+        filt = (pred_sdf[:, 0] <= dx_sdf / 2) & (pred_sdf[:, 0] >= -dx_sdf / 2)
         dL_ds_i = -torch.matmul(dL_dx_i[filt].unsqueeze(1), normals[filt].unsqueeze(-1)).squeeze(-1)
         # refer to Equation (4) in the main paper
         loss_backward = torch.sum(dL_ds_i * pred_sdf[filt])
