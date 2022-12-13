@@ -65,6 +65,41 @@ options = {
 }
 
 
+def add_muscles(shape, rest_mesh, transform, verbose=False):
+    actuator_scale = 0.04
+    actuator_height = 1 #int(shape[2] * actuator_scale)
+    actuator_width =  1 #int(shape[1] * actuator_scale)
+
+    all_muscles = []
+    shared_muscles = []
+    for z in range(int(shape[2] / 2) - actuator_height - 1, int(shape[2] / 2) + actuator_height):
+        muscle_pair = []
+        for y in [int(shape[1] / 2) - actuator_width - 1, int(shape[1] / 2) + actuator_width - 1]:
+            indices = rest_mesh.cell_indices[int(0.4 * shape[0]):int(0.8 * shape[0]), y, z].tolist()
+            muscle_pair.append(indices)
+
+        shared_muscles.append(muscle_pair)
+    all_muscles.append(shared_muscles)
+    
+    # Truncate the muscles that are too long
+    first_neg_idx = 10000000
+    for shm in all_muscles:
+        for mp in shm:
+            for pair in mp:
+                for idx, m in enumerate(pair):
+                    if m == -1 and idx < first_neg_idx:
+                        first_neg_idx = idx
+    for shm in range(len(all_muscles)):
+        for mp in range(len(all_muscles[shm])):
+            for pair in range(len(all_muscles[shm][mp])):
+                all_muscles[shm][mp][pair] = all_muscles[shm][mp][pair][:first_neg_idx]
+                transform.append(transforms.AddActuationEnergy(1e6, [1.0, 0.0, 0.0], all_muscles[shm][mp][pair]))
+    if verbose:
+        print("Muscles: ", all_muscles)
+
+    return all_muscles
+    
+
 def simulate(voxels, num_frames=20, make_video=False):
     ## Inint simulator
 
@@ -74,32 +109,7 @@ def simulate(voxels, num_frames=20, make_video=False):
     transform.append(transforms.AddStateForce(
         'hydrodynamics', [rho] + v_water + Cd_points.ravel().tolist() + Ct_points.ravel().tolist() + rest_mesh.boundary.ravel().tolist()))
 
-    actuator_scale = 0.04
-    actuator_height = 1 #int(shape[2] * actuator_scale)
-    actuator_width =  1 #int(shape[1] * actuator_scale)
-
-    all_muscles = []
-    shared_muscles = []
-    for z in range(int(shape[2] / 2) - actuator_height, int(shape[2] / 2) + actuator_height):
-        muscle_pair = []
-        for y in [int(shape[1] / 2) - actuator_width, int(shape[1] / 2) + actuator_width]:
-            indices = rest_mesh.cell_indices[int(0.45 * shape[0]):int(0.7 * shape[0]), y, z].tolist()
-
-            transform.append(transforms.AddActuationEnergy(1e6, [1.0, 0.0, 0.0], indices))
-            muscle_pair.append(indices)
-        
-        first_neg_idx = len(muscle_pair[0])
-        for idx in range(len(muscle_pair[0])):
-            if muscle_pair[0][idx] == -1 or muscle_pair[1][idx] == -1:
-                first_neg_idx = idx
-                break
-        muscle_pair[0] = muscle_pair[0][:first_neg_idx]
-        muscle_pair[1] = muscle_pair[1][:first_neg_idx]
-
-        shared_muscles.append(muscle_pair)
-    all_muscles.append(shared_muscles)
-    print("Muscles: ", all_muscles)
-
+    all_muscles = add_muscles(shape, rest_mesh, transform)
     transform = transforms.Compose(transform)
 
     deformable = DeformableHex(
@@ -163,7 +173,7 @@ def simulate(voxels, num_frames=20, make_video=False):
             #     (-0.5, -3.0, 1.2),
             #     (-0.5, 0.0, 0.0),
             #     (0.0, 0.0, 1.0)]
-            plotter.camera_position = 'xz'
+            # plotter.camera_position = 'xz'
             _, img = plotter.show(return_cpos=True, screenshot=True, return_img=True, auto_close=False, jupyter_backend='none', return_viewer=False)
             plotter.clear()
             writer.append_data(img)

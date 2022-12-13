@@ -41,7 +41,7 @@ def show_grid(*plots, shape=None, title="", names=None):
 
 def plot_3d_mesh(verts, faces):
     trace = go.Mesh3d(x=verts[:, 0], y=verts[:, 1], z=verts[:, 2], 
-                      i=faces[:, 0], j=faces[:, 1], k=faces[:, 2], )
+                    i=faces[:, 0], j=faces[:, 1], k=faces[:, 2], )
     return [trace]
 
 def plot_3d_point_cloud(points, n_subsample=None, fields=None):
