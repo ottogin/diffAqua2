@@ -21,12 +21,15 @@ def show(traces):
     fig.update_layout(template="plotly_dark")
     fig.show()
 
-def show_grid(*plots, shape=None, title=""):
+def show_grid(*plots, shape=None, title="", names=None):
     if shape is None:
         shape = (len(plots), 1)
-
+        
+    if names is None:
+        names = []
     fig = make_subplots(cols=shape[0],  rows=shape[1],
-                        specs=[[{'type': 'surface'}] * shape[0]] * shape[1])
+                        specs=[[{'type': 'surface'}] * shape[0]] * shape[1],
+                        subplot_titles=names)
 
     for idx, pl in enumerate(plots):
         for tr in pl:

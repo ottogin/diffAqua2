@@ -4,6 +4,7 @@ import time
 import math
 import random
 import copy
+import os
 from collections import deque
 from tqdm import trange, tqdm
 
@@ -18,6 +19,8 @@ import torch.nn.functional as F
 
 import trimesh
 import pyvista as pv
+pv.start_xvfb()
+pv.set_jupyter_backend("none")
 import imageio
 
 from diffpd.fem import DeformableHex, HydrodynamicsStateForceHex
@@ -27,7 +30,6 @@ from diffpd import transforms
 from diffpd.mesh import MeshHex
 
 seed = 42
-# pv.start_xvfb()
 
 # Mesh parameters.
 length = 20
@@ -63,7 +65,7 @@ options = {
 }
 
 
-def simulate(voxels, num_frames=20):
+def simulate(voxels, num_frames=20, make_video=False):
     ## Inint simulator
 
     shape = voxels.shape
@@ -123,28 +125,47 @@ def simulate(voxels, num_frames=20):
     target_dir = torch.Tensor([-1.0, 0.0, 0.0]).to(torch.float64)
     forward_loss = 0.0
     
-    qs, vs = [], []
+    if make_video:
+        # if not os.path.exists(make_video):
+        #     os.mkdir(make_video)
+        plotter = pv.Plotter(off_screen=True)
+        writer = imageio.get_writer(make_video, fps=20)
+
     for a in controller():
         q, v = sim(q, v, a, shape=voxel_mesh)
 
         v_zero = torch.zeros_like(v).view(-1, 3)
         v_zero[:, :-1] = v.view(-1, 3)[:, :-1]
         v_zero = v_zero.view(-1)
-
         v_center = v_zero.view(-1, 3).mean(dim=0)
 
         dot = torch.dot(v_center, target_dir)
         forward_loss += -dot
 
-        qs.append(q)
-        vs.append(v)
+        if make_video:
+            frame_mesh = MeshHex(q.detach().cpu().numpy(), rest_mesh.elements)
+            pv_boundary = frame_mesh.get_pv_boundary()
+            plotter.add_mesh(pv_boundary, color='w', show_edges=True, name='fish')
+            # plotter.add_arrows(arrow_cent, arrow_dir, mag=1.0, clim=[0, 1])
+            # plotter.add_arrows(q_head_np, arrow_dir.sum(0), mag=0.1, clim=[0, 1])
+            plotter.camera_position = [
+                (-0.5, -3.0, 1.2),
+                (-0.5, 0.0, 0.0),
+                (0.0, 0.0, 1.0)]
+            _, img = plotter.show(screenshot=True, return_img=True, auto_close=False, jupyter_backend='none', return_viewer=False)
+            plotter.clear()
+            writer.append_data(img)
 
+    forward_loss /= num_frames
     # for idx in range(20):
     #     print(torch.mean(vs[idx].reshape(-1, 3)[:, 0]).item(),
     #           torch.mean(vs[idx].reshape(-1, 3)[:, 1]).item(),
     #           torch.mean(vs[idx].reshape(-1, 3)[:, 2]).item()
     #         )
-    # speed = torch.mean((qs[-1] - q0).reshape(-1, 3)[:, 0])#torch.mean(torch.concatenate(vs).reshape(-1, 3))
     
+    if make_video:
+        writer.close()
+        plotter.close()
+
     return forward_loss, voxel_mesh
         

@@ -10,13 +10,19 @@ from src.simulation import simulate
 import sys
 sys.path.insert(1, "external/MeshSDF")
 from lib.models.decoder import DeepSDF
+from chamferdist import ChamferDistance
+from diffpd.mesh import MeshHex
 
 
 DEVICE = "cuda:2"
 
-def run_optimisation(save_path, start_latent_num=14, lr=1e-4, num_iters=100, dx=1./20, dx_sdf=1./32):
-    print(f"Start optimisation {save_path} from shape #{start_latent_num} with lr={lr} and {num_iters} iterations")
-    
+def run_optimisation(save_path, start_latent_num=14, lr=1e-4, num_iters=100, dx=1./20, dx_sdf=1./32, do_target_shape_optimisation=False, N=[64, 32, 32]):
+    print(f"Start optimisation {save_path} from shape #{start_latent_num} with lr={lr} and {num_iters} iterations", N)
+
+    if not os.path.exists(save_path):
+        os.mkdir(save_path)
+    save_path = os.path.join(save_path, "summary.json")
+
     summary = {
         "params": {
             "start_latent_num": start_latent_num,
@@ -30,7 +36,7 @@ def run_optimisation(save_path, start_latent_num=14, lr=1e-4, num_iters=100, dx=
             "latents": [],
         }
     }
-    
+
     # Load the model
     experiment_dir = "runs/wolfish_e256/"
 
@@ -48,21 +54,30 @@ def run_optimisation(save_path, start_latent_num=14, lr=1e-4, num_iters=100, dx=
 
     # Load latent codes
     orig_latents = torch.load(os.path.join(experiment_dir, "LatentCodes/latest.pth"), map_location=DEVICE)["latent_codes"]["weight"]
-        
-    latent_codes = []
-    metric  = []
+
     latent = torch.clone(orig_latents[start_latent_num]).requires_grad_(True)
     optimizer = torch.optim.Adam([latent], lr=lr)
 
-    latent_codes.append(latent.clone())
-
     start_time = time.time()
+
+    if do_target_shape_optimisation:
+        chamferDist = ChamferDistance()
+        target_shape = reconstruct_voxels(decoder, torch.clone(orig_latents[41]), N=N)
+        target_shape = MeshHex.load(target_shape.clone().detach().numpy(), dx=dx)
+        target_shape = torch.as_tensor(target_shape.vertices).view(-1).clone().detach().to(torch.float32)
     for it in range(num_iters):
         optimizer.zero_grad()
 
         # Forward
-        voxels = reconstruct_voxels(decoder, latent, N=[64, 32, 32])
-        speed, voxel_mesh = simulate(voxels)
+        voxels = reconstruct_voxels(decoder, latent, N=N)
+        if do_target_shape_optimisation:
+            voxel_mesh = MeshHex.load(voxels.clone().detach().numpy(), dx=dx)
+            voxel_mesh = torch.as_tensor(voxel_mesh.vertices).view(-1).clone().detach().to(torch.float32).requires_grad_(True)
+            speed = -chamferDist(voxel_mesh.reshape(1, -1, 3), target_shape.reshape(1, -1, 3))\
+                    -chamferDist(target_shape.reshape(1, -1, 3), voxel_mesh.reshape(1, -1, 3))
+        else:
+            speed, voxel_mesh = simulate(voxels)
+
         loss = -speed
         loss.backward()
 
@@ -91,7 +106,7 @@ def run_optimisation(save_path, start_latent_num=14, lr=1e-4, num_iters=100, dx=
         normals = xyz.grad/torch.norm(xyz.grad, 2, 1).unsqueeze(-1)
         # now assemble inflow derivative
         optimizer.zero_grad()
-        
+
         # Drop points inside the mesh - gradients there are not reliable
         filt = (pred_sdf[:, 0] <= dx_sdf / 2) & (pred_sdf[:, 0] >= -dx_sdf / 2)
         dL_ds_i = -torch.matmul(dL_dx_i[filt].unsqueeze(1), normals[filt].unsqueeze(-1)).squeeze(-1)
