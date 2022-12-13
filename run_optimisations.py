@@ -14,7 +14,7 @@ from chamferdist import ChamferDistance
 from diffpd.mesh import MeshHex
 
 
-DEVICE = "cuda:0"
+DEVICE = "cuda:2"
 
 def run_optimisation(save_path, start_latent_num=14, lr=1e-4, num_iters=100, dx=1./20, dx_sdf=1./32, do_target_shape_optimisation=False, N=[64, 32, 32]):
     print(f"Start optimisation {save_path} from shape #{start_latent_num} with lr={lr} and {num_iters} iterations", N)
@@ -77,6 +77,7 @@ def run_optimisation(save_path, start_latent_num=14, lr=1e-4, num_iters=100, dx=
             speed = -chamferDist(voxel_mesh.reshape(1, -1, 3), target_shape.reshape(1, -1, 3))\
                     -chamferDist(target_shape.reshape(1, -1, 3), voxel_mesh.reshape(1, -1, 3))
         else:
+            # flip the shape to make it face negative x as in DiffAqua
             speed, voxel_mesh = simulate(voxels)
 
         loss = speed
@@ -84,13 +85,19 @@ def run_optimisation(save_path, start_latent_num=14, lr=1e-4, num_iters=100, dx=
 
         # Backward through MeshSDF - don't forget to convert the 
         # Modify the dL/dx_i to be in the DeepSDF coordinate system
-        dL_dx_i = dx / dx_sdf * voxel_mesh.grad.reshape(-1, 3).type(torch.FloatTensor)
+        # Dont forget about the flip! Last multiplier!
+        dL_dx_i = dx / dx_sdf * voxel_mesh.grad.reshape(-1, 3).type(torch.FloatTensor)\
+                * torch.tensor([[-1, 1, 1]], dtype=torch.float32, device=voxel_mesh.device)
+
         dL_dx_i = dL_dx_i.to(DEVICE)
         # use vertices to compute full backward pass
         optimizer.zero_grad()
 
         # Convert voxel_mesh to DeepSDF cooridnate system !!!!!!!!
+        # Don't forget to account for the flip!
         voxel_mesh = voxel_mesh.reshape(-1, 3) * dx_sdf / dx + torch.tensor([[-1, -0.5, -0.5]], dtype=voxel_mesh.dtype, device=voxel_mesh.device)
+        voxel_mesh *= torch.tensor([[-1, 1, 1]], dtype=voxel_mesh.dtype, device=voxel_mesh.device)
+
         xyz = voxel_mesh.clone().detach().type(torch.FloatTensor)
         xyz = xyz.to(DEVICE).requires_grad_(True)
         latent_inputs = latent.expand(xyz.shape[0], -1)

@@ -65,7 +65,7 @@ options = {
 }
 
 
-def simulate(voxels, num_frames=100, make_video=False):
+def simulate(voxels, num_frames=20, make_video=False):
     ## Inint simulator
 
     shape = voxels.shape
@@ -75,21 +75,30 @@ def simulate(voxels, num_frames=100, make_video=False):
         'hydrodynamics', [rho] + v_water + Cd_points.ravel().tolist() + Ct_points.ravel().tolist() + rest_mesh.boundary.ravel().tolist()))
 
     actuator_scale = 0.04
-    actuator_height = int(shape[2] * actuator_scale)
-    actuator_width =  int(shape[1] * actuator_scale)
+    actuator_height = 1 #int(shape[2] * actuator_scale)
+    actuator_width =  1 #int(shape[1] * actuator_scale)
 
     all_muscles = []
     shared_muscles = []
     for z in range(int(shape[2] / 2) - actuator_height, int(shape[2] / 2) + actuator_height):
         muscle_pair = []
-        for y in range(int(shape[1] / 2) - actuator_width, int(shape[1] / 2) + actuator_width):
-            indices = rest_mesh.cell_indices[int(0.45 * shape[0]):int(0.6 * shape[0]), y, z].tolist()
+        for y in [int(shape[1] / 2) - actuator_width, int(shape[1] / 2) + actuator_width]:
+            indices = rest_mesh.cell_indices[int(0.45 * shape[0]):int(0.7 * shape[0]), y, z].tolist()
+
             transform.append(transforms.AddActuationEnergy(1e6, [1.0, 0.0, 0.0], indices))
             muscle_pair.append(indices)
+        
+        first_neg_idx = len(muscle_pair[0])
+        for idx in range(len(muscle_pair[0])):
+            if muscle_pair[0][idx] == -1 or muscle_pair[1][idx] == -1:
+                first_neg_idx = idx
+                break
+        muscle_pair[0] = muscle_pair[0][:first_neg_idx]
+        muscle_pair[1] = muscle_pair[1][:first_neg_idx]
 
-            # print(indices)
         shared_muscles.append(muscle_pair)
     all_muscles.append(shared_muscles)
+    print("Muscles: ", all_muscles)
 
     transform = transforms.Compose(transform)
 
@@ -133,8 +142,6 @@ def simulate(voxels, num_frames=100, make_video=False):
 
     for a in controller():
         q, v = sim(q, v, a, shape=voxel_mesh)
-        
-        print("Location : ", q.view(-1, 3).mean(dim=0), " : ", q.size())
 
         v_zero = torch.zeros_like(v).view(-1, 3)
         v_zero[:, :-1] = v.view(-1, 3)[:, :-1]
@@ -171,4 +178,3 @@ def simulate(voxels, num_frames=100, make_video=False):
         plotter.close()
 
     return forward_loss, voxel_mesh
-        
