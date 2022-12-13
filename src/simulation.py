@@ -133,6 +133,8 @@ def simulate(voxels, num_frames=100, make_video=False):
 
     for a in controller():
         q, v = sim(q, v, a, shape=voxel_mesh)
+        
+        print("Location : ", q.view(-1, 3).mean(dim=0), " : ", q.size())
 
         v_zero = torch.zeros_like(v).view(-1, 3)
         v_zero[:, :-1] = v.view(-1, 3)[:, :-1]
@@ -152,6 +154,7 @@ def simulate(voxels, num_frames=100, make_video=False):
             #     (-0.5, -3.0, 1.2),
             #     (-0.5, 0.0, 0.0),
             #     (0.0, 0.0, 1.0)]
+            plotter.camera_position = 'xz'
             _, img = plotter.show(return_cpos=True, screenshot=True, return_img=True, auto_close=False, jupyter_backend='none', return_viewer=False)
             plotter.clear()
             writer.append_data(img)
