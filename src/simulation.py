@@ -65,7 +65,7 @@ options = {
 }
 
 
-def simulate(voxels, num_frames=20, make_video=False):
+def simulate(voxels, num_frames=100, make_video=False):
     ## Inint simulator
 
     shape = voxels.shape
@@ -83,7 +83,7 @@ def simulate(voxels, num_frames=20, make_video=False):
     for z in range(int(shape[2] / 2) - actuator_height, int(shape[2] / 2) + actuator_height):
         muscle_pair = []
         for y in range(int(shape[1] / 2) - actuator_width, int(shape[1] / 2) + actuator_width):
-            indices = rest_mesh.cell_indices[int(0.45 * shape[0]):int(0.5 * shape[0]), y, z].tolist()
+            indices = rest_mesh.cell_indices[int(0.45 * shape[0]):int(0.6 * shape[0]), y, z].tolist()
             transform.append(transforms.AddActuationEnergy(1e6, [1.0, 0.0, 0.0], indices))
             muscle_pair.append(indices)
 

@@ -14,7 +14,7 @@ from chamferdist import ChamferDistance
 from diffpd.mesh import MeshHex
 
 
-DEVICE = "cuda:2"
+DEVICE = "cuda:0"
 
 def run_optimisation(save_path, start_latent_num=14, lr=1e-4, num_iters=100, dx=1./20, dx_sdf=1./32, do_target_shape_optimisation=False, N=[64, 32, 32]):
     print(f"Start optimisation {save_path} from shape #{start_latent_num} with lr={lr} and {num_iters} iterations", N)
@@ -65,6 +65,7 @@ def run_optimisation(save_path, start_latent_num=14, lr=1e-4, num_iters=100, dx=
         target_shape = reconstruct_voxels(decoder, torch.clone(orig_latents[41]), N=N)
         target_shape = MeshHex.load(target_shape.clone().detach().numpy(), dx=dx)
         target_shape = torch.as_tensor(target_shape.vertices).view(-1).clone().detach().to(torch.float32)
+    
     for it in range(num_iters):
         optimizer.zero_grad()
 
@@ -78,7 +79,7 @@ def run_optimisation(save_path, start_latent_num=14, lr=1e-4, num_iters=100, dx=
         else:
             speed, voxel_mesh = simulate(voxels)
 
-        loss = -speed
+        loss = speed
         loss.backward()
 
         # Backward through MeshSDF - don't forget to convert the 
@@ -108,7 +109,7 @@ def run_optimisation(save_path, start_latent_num=14, lr=1e-4, num_iters=100, dx=
         optimizer.zero_grad()
 
         # Drop points inside the mesh - gradients there are not reliable
-        filt = (pred_sdf[:, 0] <= dx_sdf / 2) & (pred_sdf[:, 0] >= -dx_sdf / 2)
+        filt = (pred_sdf[:, 0] <= dx_sdf / 0.00000001) & (pred_sdf[:, 0] >= -dx_sdf / 0.000000001)
         dL_ds_i = -torch.matmul(dL_dx_i[filt].unsqueeze(1), normals[filt].unsqueeze(-1)).squeeze(-1)
         # refer to Equation (4) in the main paper
         loss_backward = torch.sum(dL_ds_i * pred_sdf[filt])
