@@ -14,9 +14,9 @@ from chamferdist import ChamferDistance
 from diffpd.mesh import MeshHex
 
 
-DEVICE = "cuda:2"
+DEVICE = "cuda:0"
 
-def run_optimisation(save_path, start_latent_num=14, lr=1e-4, num_iters=100, dx=1./20, dx_sdf=1./32, do_target_shape_optimisation=False, N=[64, 32, 32]):
+def run_optimisation(save_path, start_latent_num=14, lr=1e-3, num_iters=100, dx=1./20, dx_sdf=1./32, do_target_shape_optimisation=False, N=[64, 32, 32]):
     print(f"Start optimisation {save_path} from shape #{start_latent_num} with lr={lr} and {num_iters} iterations", N)
 
     if not os.path.exists(save_path):

@@ -72,7 +72,7 @@ def add_muscles(shape, rest_mesh, transform, verbose=False):
 
     all_muscles = []
     shared_muscles = []
-    for z in range(int(shape[2] / 2) - actuator_height - 1, int(shape[2] / 2) + actuator_height):
+    for z in range(int(shape[2] / 2) - actuator_height - 1, int(shape[2] / 2) + actuator_height - 1):
         muscle_pair = []
         for y in [int(shape[1] / 2) - actuator_width - 1, int(shape[1] / 2) + actuator_width - 1]:
             indices = rest_mesh.cell_indices[int(0.4 * shape[0]):int(0.8 * shape[0]), y, z].tolist()
